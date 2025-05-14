@@ -1,0 +1,778 @@
+openapi: 3.0.0
+info:
+  title: Banking Core POC API
+  description: A proof of concept banking proxy service
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /api/users:
+    post:
+      summary: Create a new user
+      description: Creates a new user with an associated child account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - cpf
+                - email
+              properties:
+                name:
+                  type: string
+                  example: John Doe
+                cpf:
+                  type: string
+                  pattern: ^\d{11}$
+                  example: 12345678901
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                phoneNumber:
+                  type: string
+                  example: 5511999999999
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      accountId:
+                        type: string
+                        example: acc-12345678
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/users/{id}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/users/cpf/{cpf}:
+    get:
+      summary: Get user by CPF
+      parameters:
+        - name: cpf
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/accounts/{id}:
+    get:
+      summary: Get account by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Account found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/accounts/user/{userId}:
+    get:
+      summary: Get account by user ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Account found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/accounts/{id}/balance:
+    get:
+      summary: Get account balance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Balance retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      balance:
+                        type: number
+                        format: float
+                        example: 1500.75
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/accounts/{id}/transactions:
+    get:
+      summary: Get transaction history for an account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transactions retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransactionSummary'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/qrcodes:
+    post:
+      summary: Generate a PIX QR code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - amount
+              properties:
+                userId:
+                  type: string
+                  example: user-12345678
+                productId:
+                  type: string
+                  example: product-12345678
+                amount:
+                  type: number
+                  format: float
+                  example: 100.50
+      responses:
+        '201':
+          description: QR code generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/QRCode'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/qrcodes/{id}:
+    get:
+      summary: Get QR code by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: QR code found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/QRCode'
+        '404':
+          description: QR code not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Cancel a QR code
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: QR code cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/QRCode'
+        '404':
+          description: QR code not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: QR code already used or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/qrcodes/user/{userId}:
+    get:
+      summary: Get QR codes for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: QR codes found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QRCode'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/transactions/transfer:
+    post:
+      summary: Transfer money to an external account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '201':
+          description: Transfer completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad request or insufficient funds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/transactions/refund/{id}:
+    post:
+      summary: Refund a transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Refund completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad request or transaction cannot be refunded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/transactions/webhook:
+    post:
+      summary: Webhook endpoint for transaction notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - externalTransactionId
+                - amount
+              properties:
+                type:
+                  type: string
+                  example: pix.deposit
+                externalTransactionId:
+                  type: string
+                  example: ext-tx-12345678
+                amount:
+                  type: number
+                  format: float
+                  example: 100.00
+                metadata:
+                  type: object
+                  properties:
+                    pixKey:
+                      type: string
+                      example: pix-abc123
+                    senderDocument:
+                      type: string
+                      example: 12345678901
+      responses:
+        '200':
+          description: Webhook processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad request or invalid webhook data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/transactions/simulate/pix:
+    post:
+      summary: Simulate a PIX deposit (for testing)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pixKey
+                - amount
+              properties:
+                pixKey:
+                  type: string
+                  example: pix-abc123
+                amount:
+                  type: number
+                  format: float
+                  example: 100.00
+      responses:
+        '200':
+          description: PIX deposit simulated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad request or simulation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/transactions/simulate/ted:
+    post:
+      summary: Simulate a TED deposit (for testing)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - accountId
+                - senderDocument
+                - amount
+              properties:
+                accountId:
+                  type: string
+                  example: acc-12345678
+                senderDocument:
+                  type: string
+                  example: 12345678901
+                amount:
+                  type: number
+                  format: float
+                  example: 100.00
+      responses:
+        '200':
+          description: TED deposit simulated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad request or simulation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: user-12345678
+        name:
+          type: string
+          example: John Doe
+        cpf:
+          type: string
+          example: 12345678901
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        phoneNumber:
+          type: string
+          example: 5511999999999
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          example: acc-12345678
+        userId:
+          type: string
+          example: user-12345678
+        externalAccountId:
+          type: string
+          example: ext-acc-12345678
+        balance:
+          type: number
+          format: float
+          example: 1500.75
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, BLOCKED]
+          example: ACTIVE
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    QRCode:
+      type: object
+      properties:
+        id:
+          type: string
+          example: qr-12345678
+        userId:
+          type: string
+          example: user-12345678
+        productId:
+          type: string
+          example: product-12345678
+        amount:
+          type: number
+          format: float
+          example: 100.50
+        pixKey:
+          type: string
+          example: pix-abc123
+        encodedImage:
+          type: string
+          example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==
+        expiresAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ACTIVE, USED, EXPIRED, CANCELLED]
+          example: ACTIVE
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          example: tx-12345678
+        userId:
+          type: string
+          example: user-12345678
+        accountId:
+          type: string
+          example: acc-12345678
+        externalTransactionId:
+          type: string
+          example: ext-tx-12345678
+        type:
+          type: string
+          enum: [PIX_DEPOSIT, TED_DEPOSIT, WITHDRAWAL, TRANSFER, REFUND]
+          example: PIX_DEPOSIT
+        amount:
+          type: number
+          format: float
+          example: 100.00
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, FAILED, REFUNDED]
+          example: COMPLETED
+        metadata:
+          type: object
+          properties:
+            pixKey:
+              type: string
+              example: pix-abc123
+            qrCodeId:
+              type: string
+              example: qr-12345678
+            productId:
+              type: string
+              example: product-12345678
+            senderDocument:
+              type: string
+              example: 12345678901
+            failureReason:
+              type: string
+              example: QR code has expired
+            originalTransactionId:
+              type: string
+              example: tx-87654321
+        description:
+          type: string
+          example: Payment for services
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TransactionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          example: tx-12345678
+        type:
+          type: string
+          enum: [PIX_DEPOSIT, TED_DEPOSIT, WITHDRAWAL, TRANSFER, REFUND]
+          example: PIX_DEPOSIT
+        amount:
+          type: number
+          format: float
+          example: 100.00
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, FAILED, REFUNDED]
+          example: COMPLETED
+        description:
+          type: string
+          example: Payment for services
+        createdAt:
+          type: string
+          format: date-time
+        relatedTo:
+          type: string
+          example: qr-12345678
+    TransferRequest:
+      type: object
+      required:
+        - userId
+        - amount
+        - destinationBank
+        - destinationBranch
+        - destinationAccount
+        - destinationAccountHolder
+        - destinationDocumentNumber
+      properties:
+        userId:
+          type: string
+          example: user-12345678
+        amount:
+          type: number
+          format: float
+          example: 200.00
+        destinationBank:
+          type: string
+          example: 001
+        destinationBranch:
+          type: string
+          example: 0001
+        destinationAccount:
+          type: string
+          example: 123456
+        destinationAccountHolder:
+          type: string
+          example: Jane Doe
+        destinationDocumentNumber:
+          type: string
+          example: 98765432101
+        description:
+          type: string
+          example: Payment for services
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: User with CPF 12345678901 already exists 

@@ -1,0 +1,140 @@
+### Variables
+@baseUrl = http://localhost:3000/api
+@userId = {{createUser.response.body.data.user.id}}
+@accountId = {{createUser.response.body.data.accountId}}
+@qrcodeId = {{createQRCode.response.body.data.id}}
+@pixKey = {{createQRCode.response.body.data.pixKey}}
+@transactionId = {{simulatePixDeposit.response.body.data.id}}
+
+### 1. Create a new user
+# @name createUser
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "cpf": "12345678901",
+  "email": "john.doe@example.com",
+  "phoneNumber": "5511999999999"
+}
+
+### 2. Get user by ID
+GET {{baseUrl}}/users/{{userId}}
+
+### 3. Get account by user ID
+# @name getAccount
+GET {{baseUrl}}/accounts/user/{{userId}}
+
+### 4. Get account balance (should be 0)
+# @name getInitialBalance
+GET {{baseUrl}}/accounts/{{accountId}}/balance
+
+### 5. Generate a QR code for deposit
+# @name createQRCode
+POST {{baseUrl}}/qrcodes
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "amount": 100.50
+}
+
+### 6. Get QR code by ID
+GET {{baseUrl}}/qrcodes/{{qrcodeId}}
+
+### 7. Simulate PIX deposit using the QR code
+# @name simulatePixDeposit
+POST {{baseUrl}}/transactions/simulate/pix
+Content-Type: application/json
+
+{
+  "pixKey": "{{pixKey}}",
+  "amount": 100.50
+}
+
+### 8. Get account balance (should now be 100.50)
+# @name getUpdatedBalance
+GET {{baseUrl}}/accounts/{{accountId}}/balance
+
+### 9. Get transaction history
+# @name getTransactions
+GET {{baseUrl}}/accounts/{{accountId}}/transactions
+
+### 10. Transfer money to external account
+# @name transferMoney
+POST {{baseUrl}}/transactions/transfer
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "amount": 50.25,
+  "destinationBank": "001",
+  "destinationBranch": "0001",
+  "destinationAccount": "123456",
+  "destinationAccountHolder": "Jane Doe",
+  "destinationDocumentNumber": "98765432101",
+  "description": "Payment for services"
+}
+
+### 11. Get account balance again (should now be 50.25)
+# @name getFinalBalance
+GET {{baseUrl}}/accounts/{{accountId}}/balance
+
+### 12. Get transaction history again
+GET {{baseUrl}}/accounts/{{accountId}}/transactions
+
+### 13. Refund transaction
+# @name refundTransaction
+POST {{baseUrl}}/transactions/refund/{{transactionId}}
+
+### 14. Get final transaction history
+GET {{baseUrl}}/accounts/{{accountId}}/transactions
+
+### 15. Test error cases - Try to create user with same CPF
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "cpf": "12345678901",
+  "email": "jane.doe@example.com",
+  "phoneNumber": "5511888888888"
+}
+
+### 16. Try to generate QR code with zero amount
+POST {{baseUrl}}/qrcodes
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "amount": 0
+}
+
+### 17. Try to transfer more than available balance
+POST {{baseUrl}}/transactions/transfer
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "amount": 1000,
+  "destinationBank": "001",
+  "destinationBranch": "0001",
+  "destinationAccount": "123456",
+  "destinationAccountHolder": "Jane Doe",
+  "destinationDocumentNumber": "98765432101",
+  "description": "Payment that should fail"
+}
+
+### Extra: Simulate TED deposit
+# @name simulateTedDeposit
+POST {{baseUrl}}/transactions/simulate/ted
+Content-Type: application/json
+
+{
+  "accountId": "{{accountId}}",
+  "senderDocument": "12345678901",
+  "amount": 200
+}
+
+### Get final balance after all operations
+GET {{baseUrl}}/accounts/{{accountId}}/balance 
