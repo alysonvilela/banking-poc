@@ -3,32 +3,40 @@ export interface Transaction {
   userId: string;
   accountId: string;
   externalTransactionId: string; // ID from external banking API
-  type: TransactionType;
-  amount: number;
+  transferId: string | null;
+  transactionRefundId: string | null;
 
-  createdAt: Date;
-  completedAt: Date;
-  failedAt: Date;
-  refundedAt: Date;
+  type: TransactionType;
+  paymentMethod: TransactionPaymentMethod;
+  status: TransactionStatus;
+
+  amount: number;
 
   metadata?: Record<string, any>;
   description?: string;
-  updatedAt: Date;
+
+  createdAt: Date;
+  failedAt: Date | null;
+  updatedAt: Date | null;
 }
 
+
+
 export enum TransactionType {
-  PIX_DEPOSIT = 'PIX_DEPOSIT',
-  TED_DEPOSIT = 'TED_DEPOSIT',
-  WITHDRAWAL = 'WITHDRAWAL',
-  TRANSFER = 'TRANSFER',
-  REFUND = 'REFUND'
+  IN = "IN",
+  OUT = "OUT",
+}
+
+export enum TransactionPaymentMethod {
+  PIX = "PIX",
+  TED = "TED",
 }
 
 export enum TransactionStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED'
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  REFUNDED = "REFUNDED",
 }
 
 export type TransferDto = {
@@ -40,4 +48,4 @@ export type TransferDto = {
   destinationAccountHolder: string;
   destinationDocumentNumber: string;
   description?: string;
-}; 
+};

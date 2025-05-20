@@ -8,8 +8,10 @@
     "build": "bun build src/index.ts --outdir dist"
   },
   "dependencies": {
+    "dotenv": "^8.2.0",
     "hono": "^4.7.9",
     "ky": "^1.8.1",
+    "node-fetch": "^3.3.2",
     "zod": "^3.24.4"
   },
   "devDependencies": {

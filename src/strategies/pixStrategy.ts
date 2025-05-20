@@ -16,7 +16,7 @@ class PixTransactionStrategy implements TransactionStrategy {
    * Check if this strategy can handle the transaction
    */
   canHandle(transaction: Transaction): boolean {
-    return transaction.type === TransactionType.PIX_DEPOSIT;
+    return transaction.type === TransactionType.IN;
   }
   
   /**

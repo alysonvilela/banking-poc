@@ -21,12 +21,9 @@ class AccountService {
    * Get account balance
    */
   async getBalance(accountId: string): Promise<number> {
-    const account = await accountRepository.findById(accountId);
-    if (!account) {
-      throw new Error(`Account with ID ${accountId} not found`);
-    }
-    
-    return account.balance;
+    const transactions = await transactionRepository.findByAccountId(accountId);
+    return transactions.filter(tx => tx.status === 'COMPLETED')
+      .reduce((sum, tx) => sum + (tx.type === 'IN' ? tx.amount : -tx.amount), 0);
   }
 
   /**

@@ -15,7 +15,7 @@ class TedTransactionStrategy implements TransactionStrategy {
    * Check if this strategy can handle the transaction
    */
   canHandle(transaction: Transaction): boolean {
-    return transaction.type === TransactionType.TED_DEPOSIT;
+    return transaction.type === TransactionType.IN;
   }
   
   /**

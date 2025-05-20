@@ -4,6 +4,7 @@ import { accountRepository } from '../repositories/accountRepository';
 import { bankApiClient } from '../httpClient/bankApiClient';
 import { transactionStrategyRegistry } from '../strategies/transactionStrategy';
 import { eventEmitter, EventType } from '../events/eventEmitter';
+import { TransactionPaymentMethod } from '../domain/transaction';
 
 class TransactionService {
   /**
@@ -31,6 +32,10 @@ class TransactionService {
       status: TransactionStatus.PENDING,
       metadata: webhookData.metadata || {},
       description: webhookData.description,
+      transferId: null,
+      transactionRefundId: null,
+      paymentMethod: webhookData.paymentMethod || TransactionPaymentMethod.PIX,
+      failedAt: null,
     });
     
     // Emit transaction created event
@@ -76,11 +81,15 @@ class TransactionService {
       userId: transferData.userId,
       accountId: account.id,
       externalTransactionId: '', // Will be updated after bank API call
-      type: TransactionType.TRANSFER,
-      amount: -transferData.amount, // Negative amount for outgoing transfers
+      type: TransactionType.OUT,
+      amount: transferData.amount,
       status: TransactionStatus.PENDING,
       metadata: {},
       description: transferData.description,
+      transferId: null,
+      transactionRefundId: null,
+      paymentMethod: TransactionPaymentMethod.PIX,
+      failedAt: null,
     });
     
     try {
@@ -160,14 +169,14 @@ class TransactionService {
       throw new Error(`Transaction with ID ${transactionId} cannot be refunded (status: ${originalTransaction.status})`);
     }
     
-    if (originalTransaction.type === TransactionType.REFUND) {
-      throw new Error('Cannot refund a refund transaction');
+    if (originalTransaction.type === TransactionType.OUT) {
+      throw new Error('Cannot refund a withdrawal transaction');
     }
     
     // Check if transaction was already refunded
     const existingRefund = await transactionRepository.findByUserId(originalTransaction.userId);
     const alreadyRefunded = existingRefund.some(tx => 
-      tx.type === TransactionType.REFUND && 
+      tx.type === TransactionType.OUT && 
       tx.metadata?.originalTransactionId === originalTransaction.id &&
       tx.status !== TransactionStatus.FAILED
     );
@@ -187,13 +196,17 @@ class TransactionService {
       userId: originalTransaction.userId,
       accountId: originalTransaction.accountId,
       externalTransactionId: '', // Will be updated after bank API call
-      type: TransactionType.REFUND,
+      type: TransactionType.OUT,
       amount: -originalTransaction.amount, // Inverse of the original amount
       status: TransactionStatus.PENDING,
       metadata: {
         originalTransactionId: originalTransaction.id
       },
       description: `Refund for transaction ${originalTransaction.id}`,
+      transferId: null,
+      transactionRefundId: null,
+      paymentMethod: TransactionPaymentMethod.PIX,
+      failedAt: null,
     });
     
     try {
@@ -257,13 +270,13 @@ class TransactionService {
    */
   private mapWebhookTypeToTransactionType(webhookType: string): TransactionType {
     const typeMap: Record<string, TransactionType> = {
-      'pix.deposit': TransactionType.PIX_DEPOSIT,
-      'ted.deposit': TransactionType.TED_DEPOSIT,
-      'transfer.outgoing': TransactionType.TRANSFER,
-      'refund': TransactionType.REFUND,
+      'pix.deposit': TransactionType.IN,
+      'ted.deposit': TransactionType.IN,
+      'transfer.outgoing': TransactionType.OUT,
+      'refund': TransactionType.OUT,
     };
     
-    return typeMap[webhookType] || TransactionType.PIX_DEPOSIT;
+    return typeMap[webhookType] || TransactionType.IN;
   }
 }
 
