@@ -5,10 +5,14 @@ export interface Transaction {
   externalTransactionId: string; // ID from external banking API
   type: TransactionType;
   amount: number;
-  status: TransactionStatus;
+
+  createdAt: Date;
+  completedAt: Date;
+  failedAt: Date;
+  refundedAt: Date;
+
   metadata?: Record<string, any>;
   description?: string;
-  createdAt: Date;
   updatedAt: Date;
 }
 
